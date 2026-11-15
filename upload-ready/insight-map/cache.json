@@ -1,0 +1,20 @@
+{
+  "386b9c092f37c27f": {
+    "nodeId": "der-def",
+    "errorType": "概念混淆",
+    "confidence": 0.7899999999999999,
+    "diagnosis": "你把导函数直接代值，等于跳过了定义里的极限过程。定义题必须写出 Δy/Δx 再取极限，不能先求导再代。"
+  },
+  "09760a65b3d33d07": {
+    "nodeId": "lhopital",
+    "errorType": "条件遗漏",
+    "confidence": 0.9129999999999999,
+    "diagnosis": "用洛必达之前没验证条件，而且 (sinx)′ = cosx 本身就依赖这个极限，构成循环论证。"
+  },
+  "9fd2c20243d40714": {
+    "nodeId": "der-app",
+    "errorType": "分类讨论不全",
+    "confidence": 0.76,
+    "diagnosis": "导数算对了，错在解不等式：x² > 1 有两个分支，你只写了一支。"
+  }
+}

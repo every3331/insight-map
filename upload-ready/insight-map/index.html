@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>洞见 · 跨学段错题地图</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="stars" aria-hidden="true"></div>
+
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M12 3.4 L10 7.8 L12.6 10.1 L9.6 13.4 L12.1 15.8 L10.6 20.6"
+              fill="none" stroke="currentColor" stroke-width="1.5"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="brand-name">洞见</span>
+    </div>
+
+    <nav class="nav" id="nav">
+      <button class="nav-btn on" data-view="diagnose" type="button">诊断</button>
+      <button class="nav-btn" data-view="drill" type="button">刷题</button>
+      <button class="nav-btn" data-view="map" type="button">知识地图</button>
+      <button class="nav-btn" data-view="teach" type="button">教学</button>
+      <button class="nav-btn" data-view="book" type="button">错题本<b class="nav-badge" id="bookBadge" hidden>0</b></button>
+      <button class="nav-btn" data-view="paper" type="button">试卷</button>
+    </nav>
+
+    <div class="topbar-right">
+      <div class="mastery">
+        <span class="mastery-label">掌握度</span>
+        <div class="mastery-bar"><i id="masteryFill"></i></div>
+        <span class="mastery-num" id="masteryNum">0%</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="navAgent" type="button">AI 助教</button>
+      <button class="btn btn-ghost" id="resetBtn" type="button">重置</button>
+    </div>
+  </header>
+
+  <main class="views">
+
+    <!-- ═══════════ 诊断 ═══════════ -->
+    <section class="view on" id="view-diagnose">
+      <div class="diag-grid">
+
+        <div class="card input-card">
+          <div class="card-head">
+            <h2>贴一道错题</h2>
+            <span class="src-badge" id="srcBadge" hidden>离线演示</span>
+          </div>
+
+          <div class="samples" id="samples"></div>
+
+          <div class="in-split">
+            <label class="in-label" for="qInput">题干</label>
+            <textarea id="qInput" spellcheck="false" rows="3"
+              placeholder="把题目贴进来，例如：&#10;求 f(x) = x³ − 3x 的单调递增区间"></textarea>
+            <label class="in-label" for="aInput">我的写法 <em>可留空</em></label>
+            <textarea id="aInput" class="a-input" spellcheck="false" rows="2"
+              placeholder="你当时怎么写的？例如：我求导得 3x² − 3，令它大于 0 得 x &gt; 1，所以递增区间是 (1, +∞)"></textarea>
+          </div>
+
+          <div class="input-actions">
+            <button class="btn btn-primary" id="diagnoseBtn" type="button">诊断这道题</button>
+            <span class="kbd-hint">Ctrl / ⌘ + Enter</span>
+          </div>
+
+          <button class="agent-entry" id="agentEntry" type="button">
+            <i>AI</i>
+            <span><b>让 AI 助教一步步讲给我听</b><em>它只负责讲，知识点仍受图谱约束</em></span>
+            <strong>→</strong>
+          </button>
+
+          <div class="guide" id="guide">
+            <div class="guide-head">一次诊断，产出四样东西</div>
+            <ol class="flow">
+              <li><b>01</b><div><strong>判定</strong><span>你答对没有、错在哪一步</span></div></li>
+              <li><b>02</b><div><strong>图像</strong><span>这道题的函数图，标出你算错的位置</span></div></li>
+              <li><b>03</b><div><strong>解析</strong><span>分步解法 + 这一步最常见的坑</span></div></li>
+              <li><b>04</b><div><strong>定位</strong><span>落到知识地图上的一个断点，再往前挖</span></div></li>
+            </ol>
+            <div class="flow-note">判定 → 图像 → 解析 → 定位，四步走完才叫「诊断完一道题」</div>
+          </div>
+
+          <div class="recent" id="recent" hidden>
+            <div class="guide-head">最近诊断</div>
+            <ul class="recent-list" id="recentList"></ul>
+          </div>
+
+          <div class="weak" id="weakBox" hidden>
+            <div class="guide-head">最薄的三处 · 点一下直接定位</div>
+            <div class="weak-list" id="weakList"></div>
+          </div>
+        </div>
+
+        <!-- 空态：可以让他出题 -->
+        <div class="card placeholder-card" id="placeholder">
+          <div class="ph-orbit"><span></span><span></span><span></span></div>
+          <p>诊断结果和函数图会出现在这里</p>
+          <small>判定 → 图像 → 解析 → 再定位</small>
+          <button class="btn btn-grad practice-start" id="practiceStart" type="button">没有错题？让 AI 出一道 →</button>
+        </div>
+
+        <!-- 出题卡 -->
+        <div class="card practice-card" id="practiceCard" hidden>
+          <div class="card-head">
+            <h2>AI 出题</h2>
+            <span class="src-badge" id="pqTag">题库</span>
+          </div>
+          <div class="pq-node" id="pqNode">—</div>
+          <p class="pq-stem" id="pqStem">—</p>
+          <div class="options" id="pqOptions"></div>
+          <div class="quiz-actions">
+            <button class="btn btn-primary" id="pqSubmit" type="button" disabled>提交答案</button>
+            <button class="btn btn-text" id="pqAgain" type="button">换一道</button>
+          </div>
+        </div>
+
+        <!-- 结果卡 -->
+        <div class="result-card" id="resultCard" hidden>
+
+          <div class="verdict-banner" id="vBanner">
+            <div class="vb-icon" id="vbIcon">✕</div>
+            <div class="vb-text">
+              <b id="vbTitle">答案不对</b>
+              <span id="vbSub">—</span>
+            </div>
+            <div class="vb-conf" id="vConf">置信度 0.00</div>
+          </div>
+
+          <div class="answer-row" id="answerRow">
+            <div class="ans-box bad">
+              <span>你的答案</span>
+              <b id="aYou">—</b>
+            </div>
+            <div class="ans-box good">
+              <span>正确答案</span>
+              <b id="aRight">—</b>
+            </div>
+          </div>
+
+          <!-- 图像跟着答案变 -->
+          <div class="plot-card">
+            <div class="plot-head">
+              <span class="plot-title">函数图像</span>
+              <span class="plot-expr" id="plotExpr">y = —</span>
+              <button class="pill" id="fxDeriv" type="button">显示 f′</button>
+            </div>
+            <div class="plot-wrap" id="plotWrap"><svg id="plot" role="img" aria-label="函数图像"></svg></div>
+            <div class="plot-legend">
+              <span><i class="lg-curve"></i>f(x)</span>
+              <span><i class="lg-deriv"></i>f′</span>
+              <span><i class="lg-dot-good"></i>正确位置</span>
+              <span><i class="lg-dot-bad"></i>你写的位置</span>
+              <span class="plot-note" id="plotNote"></span>
+            </div>
+          </div>
+
+          <div class="block">
+            <div class="block-title"><i class="bdot red"></i><span id="reasonTitle">为什么错</span></div>
+            <p class="block-text" id="reasonText">—</p>
+          </div>
+
+          <div class="block">
+            <div class="block-title"><i class="bdot cyan"></i>正确解析<button class="collapse-btn" id="stepsToggle" type="button">展开解析</button></div>
+            <ol class="steps" id="stepsList"></ol>
+          </div>
+
+          <div class="block" id="pitfallBlock" hidden>
+            <div class="block-title"><i class="bdot red"></i>常见错误</div>
+            <p class="block-text" id="pitfallText">—</p>
+          </div>
+
+          <button class="btn btn-primary btn-wide" id="toMap" type="button">
+            在知识地图中定位这个断点 →
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ═══════════ 刷题 ═══════════ -->
+    <section class="view" id="view-drill">
+      <div class="drill-wrap">
+
+        <div class="drill-head">
+          <div class="drill-title">刷题 <span id="drillScope">高中 + 大学 · 全知识点</span></div>
+          <div class="drill-stats">
+            <span>已答 <b id="drillDone">0</b></span>
+            <span class="ok">对 <b id="drillOk">0</b></span>
+            <span class="no">错 <b id="drillBad">0</b></span>
+          </div>
+        </div>
+        <div class="drill-progress"><i id="drillBar"></i></div>
+
+        <div class="card drill-card" id="drillCard">
+          <div class="dq-meta">
+            <span class="dq-node" id="dqNode">—</span>
+            <span class="dq-idx" id="dqIdx">第 1 题</span>
+          </div>
+          <p class="dq-stem" id="dqStem">—</p>
+          <div class="options" id="dqOptions"></div>
+          <div class="quiz-actions">
+            <button class="btn btn-primary" id="dqSubmit" type="button" disabled>提交答案</button>
+            <button class="btn btn-text" id="dqSkip" type="button">跳过这题</button>
+          </div>
+        </div>
+
+        <div class="card drill-result" id="drillResult" hidden>
+          <div class="verdict-banner" id="drBanner">
+            <div class="vb-icon" id="drIcon">✓</div>
+            <div class="vb-text">
+              <b id="drTitle">答对了</b>
+              <span id="drSub">—</span>
+            </div>
+            <div class="vb-conf" id="drTag">已计入</div>
+          </div>
+
+          <div class="answer-row">
+            <div class="ans-box" id="drYouBox">
+              <span>你选的</span>
+              <b id="drYou">—</b>
+            </div>
+            <div class="ans-box good">
+              <span>正确答案</span>
+              <b id="drRight">—</b>
+            </div>
+          </div>
+
+          <div class="block">
+            <div class="block-title"><i class="bdot cyan"></i>解析</div>
+            <ol class="steps" id="drSteps"></ol>
+          </div>
+
+          <div class="plot-card" id="drPlotCard" hidden>
+            <div class="plot-head">
+              <span class="plot-title">这道题的图</span>
+              <span class="plot-expr" id="drPlotExpr">y = —</span>
+            </div>
+            <div class="plot-wrap"><svg id="drPlot" role="img" aria-label="题目函数图像"></svg></div>
+          </div>
+
+          <div class="quiz-actions">
+            <button class="btn btn-primary" id="drNext" type="button">下一题 →</button>
+            <button class="btn btn-ghost" id="drToBook" type="button">去错题本</button>
+          </div>
+
+          <div class="chain" id="drChain" hidden>
+            <div class="chain-head">这道题卡在 <b id="drChainName">—</b>，接下来三步走完才算补上</div>
+            <div class="chain-row">
+              <button class="chain-btn" id="chainMap" type="button"><i>①</i>在地图上定位断点</button>
+              <button class="chain-btn" id="chainVideo" type="button"><i>②</i>看这个知识点的课</button>
+              <button class="chain-btn" id="chainMore" type="button"><i>③</i>再刷一轮</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ═══════════ 教学 ═══════════ -->
+    <section class="view" id="view-teach">
+      <div class="teach-layout">
+        <aside class="teach-side">
+          <div class="side-title"><span>知识点</span><em id="teachCount">共 76 个</em></div>
+          <div class="teach-filter">
+            <input id="teachSearch" class="teach-search" type="search" placeholder="搜知识点 / 编号" autocomplete="off" />
+            <div class="teach-chips">
+              <button class="tchip on" data-f="" type="button">全部</button>
+              <button class="tchip" data-f="sen" type="button">高中</button>
+              <button class="tchip" data-f="uni" type="button">大学</button>
+            </div>
+          </div>
+          <div class="teach-list" id="teachList"></div>
+        </aside>
+
+        <div class="teach-main">
+          <div class="teach-head">
+            <div class="th-info">
+              <div class="th-code" id="thCode">—</div>
+              <h2 class="th-name" id="thName">—</h2>
+              <p class="th-sub" id="thSub">—</p>
+            </div>
+            <a class="btn btn-ghost" id="thSpace" target="_blank" rel="noopener noreferrer">一数 · B 站主页</a>
+          </div>
+
+          <div class="video-list" id="videoList"></div>
+
+          <p class="teach-note">
+            卡片打开的是 B 站站内检索（关键词固定含「一数」），不硬编码 BV 号 —— 不会失效，也不会指向不存在的视频。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ 知识地图 ═══════════ -->
+    <section class="view" id="view-map">
+      <div class="map-layout">
+
+        <div class="map-col">
+          <div class="map-head">
+            <div class="crumbs" id="crumbs"></div>
+            <div class="levels" id="levels"></div>
+            <div class="map-tools">
+              <input id="mapSearch" class="map-search" type="search" placeholder="搜知识点，回车跳转" autocomplete="off" />
+              <button class="map-chip on" id="mapModeStar" type="button">星图</button>
+              <button class="map-chip" id="mapModeNode" type="button">聚焦</button>
+              <button class="map-chip" id="mapReset" type="button">重置视图</button>
+            </div>
+            <div class="map-hint" id="mapHint">滚轮缩放 · 拖拽平移 · 点击节点进入聚焦</div>
+          </div>
+          <div class="map-wrap"><svg id="map" role="img" aria-label="跨学段知识地图"></svg></div>
+          <div class="legend">
+            <span><i class="lg lg-ok"></i>已掌握</span>
+            <span><i class="lg lg-warn"></i>待巩固</span>
+            <span><i class="lg lg-weak"></i>薄弱</span>
+            <span><i class="lg lg-broken"></i>知识断点</span>
+            <span class="legend-hint">内环 = 直接相关 · 外环 = 两跳</span>
+          </div>
+        </div>
+
+        <aside class="side-col" id="sideCol">
+          <div class="side-empty" id="sideEmpty">
+            <p>先在「诊断」里定位一道错题</p>
+            <small>断点会在这里展开</small>
+          </div>
+
+          <div class="side-body" id="sideBody" hidden>
+            <div class="side-node">
+              <div class="sn-code" id="snCode">—</div>
+              <div class="sn-name" id="snName">—</div>
+              <div class="sn-bar"><i id="snFill"></i></div>
+              <div class="sn-meta" id="snMeta">—</div>
+              <div class="ev" id="evBox">
+                <span class="ev-label">证据</span>
+                <b id="evN">0/0</b>
+                <i class="ev-tag" id="evTag">待验证</i>
+                <i class="ev-hint" id="evHint" hidden></i>
+              </div>
+            </div>
+
+            <div class="intro-card" id="introCard" hidden>
+              <div class="ic-title"><i class="bdot cyan"></i>这个知识点是什么</div>
+              <p class="ic-one" id="icOne">—</p>
+              <ul class="ic-pts" id="icPts"></ul>
+              <div class="ic-trap"><b>易错</b><span id="icTrap">—</span></div>
+            </div>
+
+            <div class="dep-row" id="depRow" hidden>
+              <div class="dep-text">
+                <span class="dep-label">前置节点 <i class="cross-pill" id="depCross" hidden>跨层</i></span>
+                <span class="dep-node" id="depNode">—</span>
+              </div>
+              <button class="btn btn-grad btn-sm" id="probeBtn" type="button">先探一句 →</button>
+            </div>
+
+            <div class="probe" id="probe" hidden>
+              <div class="probe-top">
+                <span class="probe-eyebrow">前置探针 · <span id="probeNodeName">—</span> <i class="cross-pill" id="probeCross" hidden>跨层</i></span>
+                <span class="probe-tag">不计分 · 只摸底</span>
+              </div>
+              <p class="probe-why" id="probeWhy">—</p>
+              <p class="probe-stem" id="probeStem">—</p>
+              <div class="options" id="probeOptions"></div>
+              <button class="btn btn-primary btn-sm" id="probeSubmit" type="button" disabled>提交</button>
+              <div class="feedback" id="probeFb" hidden></div>
+            </div>
+
+            <div class="quiz" id="quizBox">
+              <div class="side-title">
+                <span>变式题</span>
+                <em id="qNode">同类迁移</em>
+              </div>
+              <p class="quiz-stem" id="qStem">—</p>
+              <div class="options" id="qOptions"></div>
+              <div class="quiz-actions">
+                <button class="btn btn-primary btn-sm" id="submitAnswer" type="button" disabled>提交答案</button>
+                <button class="btn btn-text" id="retryAnswer" type="button" hidden>再试一次</button>
+              </div>
+              <div class="feedback" id="feedback" hidden></div>
+
+              <div class="quiz-solution" id="qSolution" hidden>
+                <div class="block-title"><i class="bdot cyan"></i>解析</div>
+                <ol class="steps" id="qSteps"></ol>
+                <button class="btn btn-grad qs-video" id="qVideo" type="button">看这个知识点的一数视频 →</button>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+      </div>
+    </section>
+
+    <!-- ═══════════ 试卷 ═══════════ -->
+    <section class="view" id="view-paper">
+      <div class="paper-wrap" id="paperApp"></div>
+    </section>
+
+    <!-- ═══════════ 错题本 ═══════════ -->
+    <section class="view" id="view-book">
+      <div class="book-wrap">
+        <div class="book-empty" id="bookEmpty">
+          <p>还没有诊断记录</p>
+          <small>每诊断一道题，这里会留下一条</small>
+        </div>
+        <div class="book-bar" id="bookBar" hidden>
+          <span id="bookStat">—</span>
+          <div class="book-chips" id="bookChips">
+            <button class="bchip on" data-f="all" type="button">全部</button>
+            <button class="bchip" data-f="open" type="button">待修复</button>
+            <button class="bchip" data-f="done" type="button">已修复</button>
+          </div>
+          <button class="btn btn-ghost btn-sm" id="bookExport" type="button">导出学习报告 (.md)</button>
+        </div>
+        <div class="book-list" id="bookList"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="graph.js"></script>
+<script src="data.js"></script>
+<script src="bank-extra.js"></script>
+<script src="mathfmt.js"></script>
+<script src="plot.js"></script>
+<script src="papers.js"></script>
+<script src="papers2.js"></script>
+<script src="papers3.js"></script>
+<script src="papers-extra.js"></script>
+<script src="papers4.js"></script>
+<script src="paper-tags.js"></script>
+<script src="paper-methods.js"></script>
+<script src="paper-methods2.js"></script>
+<script src="bili.js"></script>
+<script src="resources.js"></script>
+<script src="paper.js"></script>
+<script src="pomodoro.js"></script>
+<script src="app.js"></script>
+<script src="planner.js"></script>
+<script src="agent.js"></script>
+</body>
+</html>

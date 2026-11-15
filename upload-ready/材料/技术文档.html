@@ -1,0 +1,710 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>洞见 · 跨学段错题地图 —— 技术文档</title>
+<style>
+  @page { size: A4; margin: 17mm 15mm 16mm; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", "Source Han Sans SC", -apple-system, sans-serif;
+    font-size: 10pt; line-height: 1.78; color: #1a1f2e; background: #fff;
+  }
+  h1, h2, h3, h4 { font-weight: 700; letter-spacing: .01em; page-break-after: avoid; }
+  h1 { font-size: 17pt; margin: 0 0 10pt; padding-bottom: 7pt; border-bottom: 2.5pt solid #0EA5E9; }
+  h2 { font-size: 12.5pt; margin: 16pt 0 7pt; color: #1b2a52; }
+  h2::before { content: ""; display: inline-block; width: 3pt; height: 11pt; background: #0EA5E9; margin-right: 6pt; vertical-align: -1.5pt; border-radius: 1pt; }
+  h3 { font-size: 10.5pt; margin: 11pt 0 5pt; color: #2a3a63; }
+  p { margin: 0 0 6.5pt; text-align: justify; }
+  ul, ol { margin: 0 0 7pt; padding-left: 16pt; }
+  li { margin-bottom: 3pt; }
+  code { font-family: "Cascadia Mono", Consolas, monospace; font-size: 8.8pt; background: #f0f3fb; padding: .5pt 3pt; border-radius: 2pt; color: #2c3f77; }
+  pre {
+    font-family: "Cascadia Mono", Consolas, monospace; font-size: 8.4pt; line-height: 1.55;
+    background: #f7f9ff; border: .5pt solid #dbe3f7; border-left: 2.5pt solid #0EA5E9;
+    padding: 6pt 8pt; margin: 6pt 0 8pt; border-radius: 3pt;
+    white-space: pre-wrap; word-break: break-all; page-break-inside: avoid;
+  }
+  table { width: 100%; border-collapse: collapse; margin: 6pt 0 9pt; font-size: 8.9pt; page-break-inside: avoid; }
+  th, td { border: .5pt solid #cfd8ee; padding: 3.6pt 5pt; text-align: left; vertical-align: top; }
+  th { background: #eef2fd; font-weight: 700; color: #1b2a52; }
+  tr:nth-child(even) td { background: #fafbff; }
+  figure { margin: 8pt 0 10pt; page-break-inside: avoid; text-align: center; }
+  figure img { width: 100%; border: .6pt solid #d5dcef; border-radius: 3pt; }
+  figcaption { font-size: 8.3pt; color: #64708f; margin-top: 4pt; }
+  .page-break { page-break-before: always; }
+  .lead { font-size: 10.5pt; color: #2a3550; background: #f5f8ff; border-left: 3pt solid #0EA5E9; padding: 8pt 10pt; margin: 8pt 0 12pt; }
+  .kv { display: flex; flex-wrap: wrap; gap: 6pt 0; margin: 6pt 0 10pt; }
+  .kv div { width: 33.3%; font-size: 9pt; }
+  .kv b { color: #0EA5E9; }
+
+  /* 封面 */
+  .cover { height: 258mm; display: flex; flex-direction: column; justify-content: center; page-break-after: always; }
+  .cover .badge { font-size: 9pt; letter-spacing: .32em; color: #0EA5E9; margin-bottom: 14pt; }
+  .cover h1 { border: 0; font-size: 30pt; line-height: 1.3; margin: 0 0 12pt; padding: 0; }
+  .cover .sub { font-size: 13pt; color: #46527a; margin-bottom: 32pt; font-weight: 400; }
+  .cover .quote { font-size: 10.5pt; color: #5b6788; border-left: 2.5pt solid #0EA5E9; padding-left: 10pt; margin-bottom: 40pt; }
+  .cover .meta { font-size: 9pt; color: #7b86a6; line-height: 2; }
+
+  /* 目录 */
+  .toc { page-break-after: always; }
+  .toc ol { list-style: none; padding: 0; counter-reset: t; }
+  .toc li { counter-increment: t; font-size: 10pt; padding: 4.5pt 0; border-bottom: .5pt dotted #d6deef; }
+  .toc li::before { content: counter(t, decimal-leading-zero); color: #0EA5E9; font-family: monospace; margin-right: 9pt; font-size: 9pt; }
+  .toc li span { float: right; color: #8d97b3; font-size: 8.5pt; }
+
+  .tag { display: inline-block; font-size: 8pt; padding: .5pt 5pt; border-radius: 8pt; background: #eef2fd; color: #0EA5E9; border: .5pt solid #c9d6f8; margin-right: 4pt; }
+  .note { font-size: 8.8pt; color: #64708f; background: #f7f9ff; border: .5pt dashed #c9d6f8; padding: 6pt 8pt; border-radius: 3pt; margin: 6pt 0 8pt; }
+  .step { font-size: 9.4pt; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ 封面 ═══════════ -->
+<div class="cover">
+  <div class="badge">A I &nbsp; W E B &nbsp; 网 页 开 发 挑 战 赛 &nbsp;·&nbsp; 技 术 文 档</div>
+  <h1>洞见<br>跨学段错题地图</h1>
+  <div class="sub">错题本记录错误，知识地图记录「不会」</div>
+  <div class="quote">他不是不会洛必达，他是从高中就没搞清导数是什么。</div>
+  <div class="meta">
+    交付形态：纯静态 Web（双击即运行）+ 可选零依赖 Node 后端<br>
+    技术栈：原生 HTML / CSS / JavaScript，无框架、无构建、无运行时依赖<br>
+    代码规模：约 4 800 行（前端 4 000 + 后端 400 + 知识库 1 400 条数据）<br>
+    文档版本：v1.0
+  </div>
+</div>
+
+<!-- ═══════════ 目录 ═══════════ -->
+<div class="toc">
+  <h1>目录</h1>
+  <ol>
+    <li>摘要 <span>一句话定位 · 三个差异化 · 关键数字</span></li>
+    <li>问题与洞察 <span>跨学段断层 · 现有工具的空白 · 三条设计原则</span></li>
+    <li>总体架构 <span>四层结构 · 数据流 · 为什么无框架</span></li>
+    <li>核心实现一：两段式召回与结构化输出 <span>本地召回 · 模型精判 · 7 字段契约</span></li>
+    <li>核心实现二：三级兜底 <span>缓存 · 模型 · 本地引擎 · 二次校验</span></li>
+    <li>核心实现三：焦点图布局 <span>BFS ±2 跳 · 椭圆径向 · 动态视窗</span></li>
+    <li>核心实现四：函数图像引擎 <span>递归下降 · 采样 · 切线 · 标注点</span></li>
+    <li>知识图谱与学习闭环 <span>19 节点 · 前置探针 · 掌握度算法 · 两题制</span></li>
+    <li>教学资源映射 <span>一数 · B 站 · 为什么不硬编码 BV</span></li>
+    <li>工程实现与关键取舍 <span>代码组织 · 五个取舍 · 持久化</span></li>
+    <li>局限与未来工作 <span>五条局限 · 五个下一步</span></li>
+    <li>附录 <span>接口契约 · 运行部署 · 演示参数 · 目录</span></li>
+  </ol>
+</div>
+
+<!-- ═══════════ 1 摘要 ═══════════ -->
+<h1>1　摘要</h1>
+
+<div class="lead">
+  <b>洞见</b>是一个面向「高中—大学」跨学段的错题诊断与知识定位系统。学生贴一道错题，系统先给出<b>对错判定、正确答案、分步解析</b>，同时<b>画出这道题的函数图</b>；再把这道题<b>定位到知识地图上的一个断点</b>，并沿着前置依赖一路向下去挖，直到找到真正的知识断层。
+</div>
+
+<h3>1.1　它解决什么</h3>
+<p>错题本记录的是「错了哪道题」，而学生真正需要知道的是「我哪一块不会」。这两件事之间隔着一道鸿沟：学生把题抄一遍、答案改一遍，下次照样错，因为他不知道这道题背后站着哪个知识点，更不知道那个知识点下面还漏着哪几块。</p>
+<p>市面上的搜题产品解决的是「这道题答案是什么」，是<b>点状</b>的；本作品解决的是「这个洞在知识地图的哪一格，它下面还漏着哪几格」，是<b>结构</b>的。</p>
+
+<h3>1.2　三个差异化</h3>
+<table>
+  <tr><th style="width:22%">维度</th><th style="width:39%">常见做法</th><th>本作品</th></tr>
+  <tr><td>判定粒度</td><td>判断答案对错，给出正确解法</td><td>判断<b>错在哪一步</b>，并指出这一步在知识体系中的位置</td></tr>
+  <tr><td>知识组织</td><td>按年级/章节平铺</td><td><b>跨学段依赖图</b>，高中与大学节点由「跨层边」连接</td></tr>
+  <tr><td>补救路径</td><td>推同类题</td><td><b>前置探针</b>：先查地基，答错则地基节点同步裂开</td></tr>
+</table>
+
+<h3>1.3　关键数字</h3>
+<div class="kv">
+  <div><b>19</b> 个知识节点</div>
+  <div><b>21</b> 条依赖边（含 2 条跨层）</div>
+  <div><b>2</b> 个学段（高中 / 大学）</div>
+  <div><b>5</b> 个功能视图</div>
+  <div><b>16</b> 道内置题库</div>
+  <div><b>7</b> 个模型输出字段</div>
+  <div><b>3</b> 级兜底链路</div>
+  <div><b>0</b> 个第三方运行时依赖</div>
+  <div><b>0</b> 次构建步骤</div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ═══════════ 2 问题与洞察 ═══════════ -->
+<h1>2　问题与洞察</h1>
+
+<h3>2.1　一个真实的观察</h3>
+<p>项目起点是一句很具体的话：<i>「我表弟大一下学期，高数挂了。洛必达、泰勒，他全背了，题还是不会做。」</i></p>
+<p>继续追问会发现，他挂在「洛必达」上的那道题，真正卡住的地方不在大学教材第 3 章，而在两年前的高中：<b>导数的定义</b>。他记住了 <code>f′(x)</code> 这个符号，却没建立起「差商取极限」这个动作。</p>
+<p>这就是<b>跨学段断层</b>：知识是分层依赖的，但学习记录是按学期切片的。学生在大学遇到困难时，最需要的不是大学的题，而是把时钟拨回高中。</p>
+
+<h3>2.2　为什么现有工具填不上这个缝</h3>
+<table>
+  <tr><th style="width:20%">工具类型</th><th style="width:34%">它做了什么</th><th>它没做什么</th></tr>
+  <tr><td>搜题 App</td><td>OCR 题目 → 返回答案与解析</td><td>不知道这道题在知识体系中的坐标，也不关心学生是否真的会了前置</td></tr>
+  <tr><td>错题本 App</td><td>归档、分类、提醒复习</td><td>分类靠人工打标签，且只在本学期/本章内组织</td></tr>
+  <tr><td>在线题库</td><td>按知识点推题</td><td>知识点是平铺的树，没有跨学段的依赖关系，也不会主动回溯</td></tr>
+  <tr><td>AI 家教</td><td>对话式讲题</td><td>上下文只覆盖本轮对话，无法形成长期的知识状态</td></tr>
+</table>
+
+<h3>2.3　由此得出的三条设计原则</h3>
+<ol class="step">
+  <li><b>先定位，再讲题。</b>一道题的解析只能救这一道题；一个准确的定位能救这一类题。</li>
+  <li><b>知识必须是一张有方向的图。</b>节点要有 <code>prereq</code>（前置），边要能跨学段，否则回溯无从谈起。</li>
+  <li><b>模型的输出必须收窄。</b>让模型负责它擅长的（读题、判错因），把结构、坐标、题目、动画全部锁在本地，否则演示必崩。</li>
+</ol>
+
+<h3>2.4　使用场景</h3>
+<p>目标用户是「跨学段复习」中的学生：大一新生补高中缺口、高三学生用大学视角回看导数、以及任何需要知道「我到底哪一块不会」的自学者。产品形态刻意做成网页而非 App —— 学生打开即用，无需安装，也便于在教室投影。</p>
+
+<div class="page-break"></div>
+
+<!-- ═══════════ 3 总体架构 ═══════════ -->
+<h1>3　总体架构</h1>
+
+<h3>3.1　四层结构</h3>
+<pre>
+┌─────────────────────────────────────────────────────────┐
+│  视图层（5 个 view，单页路由，无框架）                      │
+│  诊断 · 刷题 · 知识地图 · 教学 · 错题本                     │
+├─────────────────────────────────────────────────────────┤
+│  交互层（app.js）                                         │
+│  视图路由 / 状态机 / 焦点图布局 / 动画 / localStorage 持久化  │
+├─────────────────────────────────────────────────────────┤
+│  能力层                                                   │
+│  plot.js      函数图像引擎（表达式解析 + 绘制 + 交互）        │
+│  mathfmt.js   轻量数学排版（lim 下标 / 积分号 / 上标）        │
+│  data.js      知识库（UMD，浏览器与 Node 共用同一份）         │
+├─────────────────────────────────────────────────────────┤
+│  服务层（server.js，零依赖，可选）                          │
+│  静态托管 / POST /api/diagnose / 两段式 prompt / 校验 / 缓存 │
+└─────────────────────────────────────────────────────────┘
+</pre>
+
+<h3>3.2　一次完整请求的数据流</h3>
+<pre>
+用户输入（题干 + 学生写法）
+   │
+   ├─① 本地召回  data.recallCandidates(text, 10)
+   │     关键词打分 → 19 个节点收缩到 10 个候选
+   │
+   ├─② POST /api/diagnose { text, candidates }
+   │     ├─ 命中缓存？        → 直接返回（毫秒级）
+   │     ├─ 有 API Key？      → 只把 10 个候选喂给模型
+   │     │     ├─ schema 校验通过 → 落盘 cache.json → 返回
+   │     │     └─ 校验失败 → 带错误回给模型重试 1 次 → 仍失败 → 兜底
+   │     └─ 无 Key / 超时 / 网络错 → 兜底
+   │
+   ├─③ 本地引擎  data.diagnoseLocal(text)
+   │     同一套打分逻辑的 argmax + 规则化的错因映射
+   │
+   └─④ 前端二次校验 validDiag()
+         只取 7 个字段 → 用知识库「富化」→ 渲染
+</pre>
+
+<h3>3.3　为什么是「无框架 + 无构建」</h3>
+<p>这个选择不是炫技，是约束推导的：</p>
+<ul>
+  <li><b>评委要能双击打开。</b>任何需要 <code>npm install</code> 的方案，都在演示现场多了一个失败点。</li>
+  <li><b>断网也要能跑。</b>赛事现场网络不可靠，纯静态文件放在 U 盘里就能演示。</li>
+  <li><b>代码要能被读。</b>4 000 行原生代码，评委 5 分钟能看懂结构；换成框架 + 构建产物，反而增加阅读成本。</li>
+</ul>
+<p>代价是放弃组件复用与类型检查，用约定（统一的选择器命名、统一的渲染函数签名）来弥补。</p>
+
+<h3>3.4　运行形态</h3>
+<table>
+  <tr><th style="width:18%">形态</th><th style="width:34%">启动方式</th><th>能力边界</th></tr>
+  <tr><td>纯静态</td><td>双击 <code>index.html</code></td><td>全部功能可用，诊断走本地引擎（徽标显示「离线演示」）</td></tr>
+  <tr><td>本地服务</td><td><code>node server.js</code></td><td>同上 + 可接任意 OpenAI 兼容网关 + 诊断缓存</td></tr>
+</table>
+
+<figure>
+  <img src="assets/fig-8-empty.png" alt="诊断页空态">
+  <figcaption>图 3-1　诊断页初始状态：左侧输入，右侧实时结果区；空态即可直接点示例开始</figcaption>
+</figure>
+
+<div class="page-break"></div>
+
+<!-- ═══════════ 4 两段式召回 ═══════════ -->
+<h1>4　核心实现一：两段式召回与结构化输出</h1>
+
+<h3>4.1　问题：19 个节点能不能直接塞进 prompt</h3>
+<p>把 19 个节点全部写进系统提示词，让模型自己选，看起来最简单。实测的问题是：节点越多，模型的选择越接近随机 —— 尤其是「导数概念 / 导数运算 / 导数应用 / 导数定义」这种名字高度相似的节点，模型很容易在四者之间漂移。</p>
+<p>解法是把「选」拆成两步：<b>先由本地把候选收缩到 10 个，再让模型在这 10 个里做精判</b>。</p>
+
+<h3>4.2　第一段：本地关键词召回</h3>
+<p>每个节点维护一组关键词 <code>kw[]</code>，打分函数带两个特殊规则：</p>
+<pre>
+function scoreNode(text, n) {
+  var t = normalize(text), s = 0;
+  n.kw.forEach(function (k) {
+    var weak = k.charAt(0) === '#';          // #sin 这类通用符号降权
+    var kk = normalize(weak ? k.slice(1) : k);
+    if (kk && t.indexOf(kk) >= 0) {
+      s += (1 + kk.length / 8) * (weak ? 0.4 : 1);
+    }
+  });
+  if (t.indexOf(normalize(n.label)) >= 0) { s += 2; }   // 节点名出现，强信号
+  return s;
+}
+</pre>
+<p>两条规则的由来都是踩过坑的：</p>
+<ul>
+  <li><b>弱权前缀 <code>#</code></b>：题目「求 lim(sinx/x) 用洛必达」里，<code>sin</code> 会命中三角函数、<code>lim</code> 会命中极限，两者都可能盖过真正命中的「洛必达」。把这类通用符号降到 0.4 倍权重后，结果稳定命中。</li>
+  <li><b>节点名加权</b>：题干里直接出现「洛必达」三个字，是最强信号，给 +2 的定值奖励。</li>
+</ul>
+
+<h3>4.3　第二段：模型精判</h3>
+<p>提示词按候选集动态生成，只包含这 10 个节点的信息（id、名称、章节号、学段、前置），并明确「你只能在这 10 个里选一个」。</p>
+<pre>
+system: 第一步已经做完了：系统用关键词把这题召回成下面这 10 个候选节点。
+        你只能在这 10 个里选一个，禁止自创、禁止拼错、禁止选候选之外的：
+          - der-def｜导数定义｜2.1｜大学｜前置：导数概念
+          - der-con｜导数概念｜5.1｜高中｜前置：函数性质
+          ...
+        错因类型按命中节点的学段选，各学段枚举不同：
+          高中：符号错误 / 概念混淆 / 分类讨论不全 / 换元不当 / 运算跳步
+          大学：条件遗漏 / 定理误用 / 概念混淆 / 推演跳步 / 极限判错
+        只输出 JSON，字段固定：{...}
+</pre>
+
+<h3>4.4　结构化输出契约</h3>
+<p>模型只允许输出 7 个字段，其中 4 个必填、3 个可选。地图坐标、前置依赖、探针题、变式题、解析文本 —— 模型一个都碰不到。</p>
+<table>
+  <tr><th style="width:14%">字段</th><th style="width:10%">必填</th><th style="width:30%">约束</th><th>用途</th></tr>
+  <tr><td><code>nodeId</code></td><td>是</td><td>必须落在<b>候选集</b>内</td><td>决定地图上哪个节点裂开</td></tr>
+  <tr><td><code>errorType</code></td><td>是</td><td>必须符合<b>该学段</b>的枚举</td><td>决定错因标签的颜色与文案</td></tr>
+  <tr><td><code>confidence</code></td><td>是</td><td>0–1 的有限数</td><td>判定卡右上角显示</td></tr>
+  <tr><td><code>diagnosis</code></td><td>是</td><td>4–160 字</td><td>「为什么错」一段话</td></tr>
+  <tr><td><code>answer</code></td><td>否</td><td>≤120 字</td><td>参考答案</td></tr>
+  <tr><td><code>steps</code></td><td>否</td><td>2–6 条，每条 ≤120 字</td><td>分步解析</td></tr>
+  <tr><td><code>pitfall</code></td><td>否</td><td>≤120 字</td><td>常见错误</td></tr>
+</table>
+
+<h3>4.5　校验与一次重试</h3>
+<p>校验失败时不直接放弃，而是把<b>错误原因回给模型</b>，要求它只修格式、重试一次。这样既保住了成功率，又不会无限重试拖长延迟。</p>
+<pre>
+const first = await callModel(messages);
+if (validate(first, cands).length === 0) return { data: first, repaired: false };
+
+messages.push({ role: 'assistant', content: JSON.stringify(first) });
+messages.push({ role: 'user',
+  content: '你的输出不符合 schema：' + errs.join('；') +
+           '。只输出合法 JSON，nodeId 必须来自候选集，errorType 必须符合该学段枚举。' });
+
+const second = await callModel(messages);   // 仍失败则抛错 → 走兜底
+</pre>
+<p>选到候选集之外的节点是<b>硬失败</b>，这点刻意做得比通用 schema 更严：宁可走本地兜底，也不接受一个地图上不存在的坐标。</p>
+
+<div class="page-break"></div>
+
+<!-- ═══════════ 5 三级兜底 ═══════════ -->
+<h1>5　核心实现二：三级兜底</h1>
+
+<h3>5.1　现场的三种死法</h3>
+<p>做演示系统时，最该先假设的不是「一切正常」，而是「一定会出事」。三种最常见的死法：</p>
+<ol>
+  <li>没配 API Key —— 直接白屏或报错</li>
+  <li>网络断了 / 网关超时 —— 转圈直到超时</li>
+  <li>模型返回了不合法的 JSON —— 前端解析崩溃</li>
+</ol>
+<p>三级兜底就是针对这三种死法设计的，目标是：<b>无论发生什么，界面都能给出一个结构完整的结果</b>。</p>
+
+<h3>5.2　三级链路</h3>
+<table>
+  <tr><th style="width:8%">级别</th><th style="width:20%">触发条件</th><th style="width:24%">行为</th><th>界面徽标</th></tr>
+  <tr><td>1</td><td>命中 <code>cache.json</code></td><td>直接返回，不调用模型</td><td>缓存命中</td></tr>
+  <tr><td>2</td><td>有 Key 且校验通过</td><td>正常模型调用</td><td>模型 · gpt-4o-mini</td></tr>
+  <tr><td>3</td><td>无 Key / 超时 / 校验失败 / 断网</td><td>本地规则引擎出结果</td><td>本地兜底</td></tr>
+</table>
+<p>此外还有第四种状态：以 <code>file://</code> 打开时前端直接跳过网络请求，徽标显示<b>「离线演示」</b>。</p>
+
+<h3>5.3　缓存键的设计</h3>
+<pre>
+function keyOf(text) {
+  return crypto.createHash('sha256')
+               .update(String(text).replace(/\s+/g, ''))   // 忽略空白差异
+               .digest('hex').slice(0, 16);
+}
+</pre>
+<p>归一化后取哈希前 16 位作为键。演示前把要讲的三道题各跑一遍，第二次就永远命中缓存 —— 现场零延迟，也不消耗额度。</p>
+
+<h3>5.4　本地引擎不是「占位符」</h3>
+<p>关键设计：<code>diagnoseLocal()</code> 返回的结构与模型<b>完全一致</b>，因此下游渲染逻辑只有一条路径。它做两件事：</p>
+<ol>
+  <li><b>定位</b>：复用 <code>recallCandidates</code> 的分数，取 argmax。</li>
+  <li><b>错因与话术</b>：按节点 id 查表给出针对性的诊断句（例如「洛必达：用之前没验证条件，且 (sinx)′ 本身依赖这个极限，构成循环论证」）。</li>
+</ol>
+<p>因此本地模式不是「降级到不能看」，而是「内容略浅、结构完整」。</p>
+
+<h3>5.5　前端的第二道校验</h3>
+<p>即使服务端说「成功」，前端仍会再校验一次：<code>nodeId</code> 是否在知识库中、<code>errorType</code> 是否在枚举内、<code>confidence</code> 是否为 0–1 的数。任何一项不过，直接用本地结果。</p>
+<pre>
+async function getDiagnosis(text) {
+  if (!USE_API) return { data: DATA.diagnoseLocal(text), source: 'local' };
+  try {
+    var j = await askServer(text);
+    if (validDiag(j.data)) return { data: j.data, source: j.source };
+    return { data: DATA.diagnoseLocal(text), source: 'fallback' };
+  } catch (e) {
+    return { data: DATA.diagnoseLocal(text), source: 'fallback' };
+  }
+}
+</pre>
+<p>这段代码里没有一条会 throw 出去的路径 —— 这是刻意的：<b>诊断函数永远返回结果</b>。</p>
+
+<div class="page-break"></div>
+
+<!-- ═══════════ 6 焦点图 ═══════════ -->
+<h1>6　核心实现三：焦点图布局</h1>
+
+<h3>6.1　为什么不画全图</h3>
+<p>19 个节点如果一次性画在 520×680 的画布里，节点标签会互相压盖，边会交叉成蜘蛛网。更根本的问题是：<b>全图没有焦点</b>。学生关心的是「我这道题周围有什么」，不是「整个学科长什么样」。</p>
+<p>所以地图永远只画<b>当前节点 ±2 跳</b>，上限 15 个节点。</p>
+
+<h3>6.2　布局算法</h3>
+<ol class="step">
+  <li><b>BFS 分层</b>：从焦点节点出发，<code>dist=0</code>；邻居 <code>dist=1</code>；邻居的邻居 <code>dist=2</code>；超过 2 跳不取。</li>
+  <li><b>内环</b>：<code>dist=1</code> 的节点按顺序均匀分布在一个椭圆上，角度 <code>-90° + 360°/n · i</code>（从正上方开始顺时针）。</li>
+  <li><b>外环</b>：<code>dist=2</code> 的节点先按「其父节点在内环的顺序」排序，再均匀铺满外圈 —— 这样相同父节点的子节点会挨在一起，交叉最少。</li>
+  <li><b>动态视窗</b>：算出所有节点的包围盒，加固定内边距后设置为 <code>viewBox</code>，让图永远填满容器。</li>
+</ol>
+<pre>
+var CX = 280, CY = 330;                       // 画布中心
+var R1X = 118, R1Y = 176;                     // 内环椭圆半径
+var R2X = 208, R2Y = 318;                     // 外环椭圆半径
+
+// 动态 viewBox：包围盒 + 上下不对称内边距（上方留给面包屑）
+map.setAttribute('viewBox',
+  (minX - 92) + ' ' + (minY - 76) + ' ' +
+  (maxX - minX + 184) + ' ' + (maxY - minY + 156));
+</pre>
+
+<h3>6.3　可读性的四个手段</h3>
+<table>
+  <tr><th style="width:22%">手段</th><th>做法</th><th style="width:26%">效果</th></tr>
+  <tr><td>同心导引环</td><td>用虚线椭圆描出内环与外环</td><td>一眼看出「直接相关」与「两跳之外」</td></tr>
+  <tr><td>主次分层</td><td>焦点半径 25、内环 20、外环 17；外环标签字号降一档、整体透明度 0.82</td><td>焦点永远是视觉中心</td></tr>
+  <tr><td>跨层边区分</td><td>跨学段边用<b>金色虚线</b>，普通边为灰色实线</td><td>「这条线通向另一个学段」可被瞬时识别</td></tr>
+  <tr><td>状态色</td><td>环的颜色由掌握度决定（绿 ≥70 / 琥珀 40–69 / 橙 &lt;40），断点节点整颗变红</td><td>不看数字也知道哪块弱</td></tr>
+</table>
+
+<figure>
+  <img src="assets/fig-3-map.png" alt="知识地图">
+  <figcaption>图 6-1　焦点图：中心为「2.1 导数定义」，内环三个直接相关节点，外环为两跳节点；断点节点整颗变红，跨层边为金色虚线</figcaption>
+</figure>
+
+<h3>6.4　状态与重绘的边界</h3>
+<p>图的重绘只在<b>焦点变化</b>时发生；断点、愈合、高亮等状态变化只改已有节点的 class 与属性，不重建 DOM。这样既保住了动画的连续性，也避免了重绘导致的闪烁。</p>
+<pre>
+function setFocus(id) { S.focusId = id; renderMap(); }   // 只有换焦点才重建
+
+function breakNode(id) {          // 断裂：只改状态，不重建
+  g.classList.add('broken');
+  replay(g, 'burst-red');         // 脉冲扩散
+  paintNode(id);                  // 更新掌握度环
+}
+</pre>
+
+<div class="page-break"></div>
+
+<!-- ═══════════ 7 图像引擎 ═══════════ -->
+<h1>7　核心实现四：函数图像引擎</h1>
+
+<h3>7.1　需求倒推</h3>
+<p>题目里出现的函数五花八门：<code>x²−4x+3</code>、<code>x³−3x</code>、<code>sin(x)/x</code>、<code>(eˣ−1)/x</code>、<code>√x</code>、<code>1/x</code>。既要能画，又要能标注「学生算错的那个点」和「正确位置」，还要能叠加导数曲线。</p>
+<p>引入第三方绘图库（Chart.js / D3）都会破坏「零依赖、双击即用」的前提，所以选择自研。</p>
+
+<h3>7.2　表达式解析：递归下降</h3>
+<p>解析器分两层：<b>词法</b>（数字、标识符、运算符、括号）与<b>语法</b>（优先级递归下降）。优先级从上到下：表达式 → 项 → 一元 → 幂 → 原子。</p>
+<pre>
+expr   := term (('+'|'-') term)*
+term   := unary (('*'|'/') unary)*  |  unary unary      // 隐式乘法
+unary  := ('-'|'+') unary | power
+power  := atom ('^' unary)?                              // 右结合
+atom   := num | 'x' | 'pi' | 'e' | func '(' expr ')' | '(' expr ')'
+</pre>
+<p>三个容错设计对教学场景很重要：</p>
+<ul>
+  <li><b>隐式乘法</b>：<code>2x</code>、<code>x(x+7)</code>、<code>2sinx</code> 都能解析 —— 学生和题面就是这么写的。</li>
+  <li><b>符号归一</b>：<code>× ÷ − ² ³ π</code> 统一成 ASCII 形式；<code>x²</code> 自动转 <code>x^2</code>。</li>
+  <li><b>前缀剥离</b>：<code>y =</code>、<code>f(x) =</code> 自动去掉，只保留右侧表达式。</li>
+</ul>
+
+<h3>7.3　采样与求值</h3>
+<p>按画布宽度决定采样点数（最多 1 400 点）。遇到 <code>NaN</code>、<code>Infinity</code> 或绝对值超过 1e7 的点，断开路径 —— 这样 <code>1/x</code>、<code>tan(x)</code> 这类有奇点的函数不会画出错误的竖线。</p>
+<pre>
+for (var i = 0; i <= N; i++) {
+  var x = xmin + (xmax - xmin) * i / N;
+  var y; try { y = fn(x); } catch (e) { y = NaN; }
+  if (!isFinite(y) || Math.abs(y) > 1e7) { pts.push({ x: x, y: NaN }); continue; }
+  pts.push({ x: x, y: y });
+}
+</pre>
+
+<h3>7.4　自动取景</h3>
+<p>绘制前先扫一遍可视区间内的 y 值，取最小/最大值并留 18% 内边距，把纵向范围自适应。横向范围由调用方给定（例如二次函数默认 <code>x∈[-1.5, 5.5]</code>，正好框住顶点与两个根）。</p>
+
+<h3>7.5　四类标注</h3>
+<table>
+  <tr><th style="width:16%">类型</th><th style="width:30%">算法</th><th>教学含义</th></tr>
+  <tr><td>零点（绿）</td><td>相邻采样点异号，线性插值求根</td><td>方程的解</td></tr>
+  <tr><td>极值（橙）</td><td>三点比较取局部极大/极小</td><td>驻点与最值</td></tr>
+  <tr><td><b>标注点</b>（绿/红）</td><td>由题目数据给定坐标与语义</td><td>标出「你写的位置」与「正确位置」</td></tr>
+  <tr><td><b>切线</b>（琥珀虚线）</td><td>给定切点与斜率，画过该点的直线</td><td>导数的几何意义</td></tr>
+</table>
+<p>导函数曲线用中心差分近似：<code>f′(x) ≈ [f(x+h) − f(x−h)] / 2h</code>，<code>h</code> 取可视宽度的 1/400。</p>
+
+<figure>
+  <img src="assets/fig-2-deriv.png" alt="导数应用的图像">
+  <figcaption>图 7-1　同一屏内的三层信息：天蓝线为 f(x)=x³−3x，浅青虚线为 f′，两个青绿点为极值点；右侧是同一道题的判定与四步解析</figcaption>
+</figure>
+
+<h3>7.6　交互</h3>
+<p>滚轮缩放（以指针位置为锚点）、拖拽平移、悬停十字线读数。所有交互都直接改可视范围并重绘，不维护额外的变换矩阵 —— 在只有一条曲线的场景下，这是最短路径。</p>
+
+<div class="page-break"></div>
+
+<!-- ═══════════ 8 知识图谱 ═══════════ -->
+<h1>8　知识图谱与学习闭环</h1>
+
+<h3>8.1　图的构造</h3>
+<p>19 个节点，2 个学段（高中 9 / 大学 10），21 条无向边，其中 2 条为跨层边（<code>数列 → 极限</code>、<code>导数运算 → 导数定义</code>）。每个节点带 7 个字段：</p>
+<pre>
+{ id, label, level, book, chapter, code, prereq, kw[] }
+</pre>
+<p>其中 <code>prereq</code>（前置）与无向边是两套语义：边用于画图与邻居扩展，<code>prereq</code> 用于「前置探针」的单向追问。</p>
+
+<h3>8.2　错因枚举为什么要分学段</h3>
+<table>
+  <tr><th style="width:16%">学段</th><th>枚举</th></tr>
+  <tr><td>高中</td><td>符号错误 / 概念混淆 / 分类讨论不全 / 换元不当 / 运算跳步</td></tr>
+  <tr><td>大学</td><td>条件遗漏 / 定理误用 / 概念混淆 / 推演跳步 / 极限判错</td></tr>
+</table>
+<p>高数最典型的错误不是算错，而是<b>没有验证定理的前提</b>。如果沿用中学的枚举，模型输出的诊断话术会一直停留在「你算错了」的层面，而这个判断本身就是错的。</p>
+
+<h3>8.3　学习闭环的五段</h3>
+<p>点开任意节点，右侧栏按固定顺序展开五块内容，构成一条从「知道是什么」到「补上」的完整链路：</p>
+<ol class="step">
+  <li><b>这个知识点是什么</b> —— 一句话定义 + 两条要点 + 一条「易错」。</li>
+  <li><b>前置节点</b> —— 标注是否跨层，可点「先探一句」。</li>
+  <li><b>变式题</b> —— 同一知识点换场景，检验是否真会。</li>
+  <li><b>答错立刻给解析</b> —— 分步解析 + 正确答案 + 「再试一次」，同时把介绍卡折叠成一行，为解析让出视线。</li>
+  <li><b>看这个知识点的一数视频</b> —— 一键跳到教学页并选中同一节点。</li>
+</ol>
+
+<h3>8.4　前置探针：最关键的一拍</h3>
+<p>诊断命中某节点后，先问一句它的 <code>prereq</code>：</p>
+<ul>
+  <li><b>答对</b> → 「前置稳固」，直接补当前节点；</li>
+  <li><b>答错</b> → <b>前置节点同步裂开</b>，两个学段之间那条金色虚线变成红色。</li>
+</ul>
+<p>这一拍的叙事价值大于功能价值：它把「你错了」变成了「你的地基漏了」，而这个判断是可视的。</p>
+
+<figure>
+  <img src="assets/fig-4-probe.png" alt="跨层断点">
+  <figcaption>图 8-1　跨层断点：大学的「2.1 导数定义」与高中的「5.1 导数概念」同时裂开，连线由金色转为红色</figcaption>
+</figure>
+
+<h3>8.5　掌握度的计算规则</h3>
+<p>掌握度不是一个装饰数字，它有明确的加减规则，并持久化在 localStorage 中：</p>
+<table>
+  <tr><th style="width:30%">事件</th><th style="width:18%">变化</th><th>说明</th></tr>
+  <tr><td>诊断命中（断点）</td><td>−15</td><td>下限 5</td></tr>
+  <tr><td>前置节点被探针带裂</td><td>−8</td><td>次级断点，惩罚较轻</td></tr>
+  <tr><td>变式题答对</td><td>+35</td><td>首次修复额外 +20（一次性跃迁），上限 100</td></tr>
+  <tr><td>刷题答对 / 答错</td><td>+5 / −8</td><td>与地图行为保持一致</td></tr>
+</table>
+<p>「首次修复额外 +20」的设计意图：从「完全不会」到「刚会」是一个质变，值得比后续巩固更大的跳幅；而重复答对只按 +35 累积，避免刷同一道题无限涨分。</p>
+
+<h3>8.6　两题制</h3>
+<p>答对一道变式题不会立刻愈合，而是显示「还差一道」，再出一道同类题，第二道也答对才算补上。这样「掌握」才不是一次运气。第二题从 16 道题库中按 <code>nodeId</code> 抽取，抽不到则回退到默认题。</p>
+
+<div class="page-break"></div>
+
+<!-- ═══════════ 9 教学映射 ═══════════ -->
+<h1>9　教学资源映射</h1>
+
+<h3>9.1　为什么这一步不做成「硬链接」</h3>
+<p>最初的想法是把每个知识点对应到具体的 B 站视频，直接嵌入播放器。实际操作中遇到两个硬约束：</p>
+<ol>
+  <li><b>BV 号无法核实。</b>编造出来的 BV 号会指向不存在的视频，评委点开一片「视频不存在」，比没有这个功能更糟。</li>
+  <li><b>站内检索链接不会失效。</b>关键词固定包含「一数」，既保证内容来源，又保证长期可用。</li>
+</ol>
+<p>因此实现选择了<b>「知识点 → 检索关键词」的一一映射</b>，并在页面底部明确写出这一取舍。</p>
+
+<h3>9.2　映射结构</h3>
+<pre>
+// data.js
+var TEACH_OVERRIDE = {
+  'der-def': [
+    { t: '导数定义 · 从差商到极限', d: '一数讲定义最透的一节，配着 Δy/Δx 的图理解', tag: '概念', q: '一数 导数定义' },
+    { t: '用定义求导 · 典型题型', d: '定义题怎么写过程才不丢分',       tag: '题型', q: '一数 导数定义 题型' }
+  ],
+  ...
+};
+// 未单独定制的节点，按「标签 + 题型」两条模板生成
+function teachFor(id) { return TEACH_OVERRIDE[id] || 模板生成(id); }
+</pre>
+<p>每个知识点固定两条：一条<b>概念课</b>、一条<b>题型课</b>。卡片上带知识点编号、类型标签、估算时长与难度，避免出现「只有一行文字」的空洞感。</p>
+
+<figure>
+  <img src="assets/fig-6-teach.png" alt="教学页">
+  <figcaption>图 9-1　教学页：左侧 19 个知识点（高/大标记），右侧该知识点的两张视频卡与检索入口</figcaption>
+</figure>
+
+<h3>9.3　与主流程的双向连通</h3>
+<p>教学页不是孤岛，它与另外两个模块双向连接：</p>
+<ul>
+  <li>地图侧栏答错后，出现「看这个知识点的一数视频 →」，<b>带着节点 id 跳转并自动选中</b>；</li>
+  <li>错题本每条记录带一个「视频」按钮，同样直达该知识点。</li>
+</ul>
+<p>这条连接把「做题」和「补课」缝在了一起：错 → 解析 → 还是不会 → 看视频。</p>
+
+<div class="page-break"></div>
+
+<!-- ═══════════ 10 工程与取舍 ═══════════ -->
+<h1>10　工程实现与关键取舍</h1>
+
+<h3>10.1　代码组织</h3>
+<table>
+  <tr><th style="width:18%">文件</th><th style="width:12%">行数</th><th>职责</th></tr>
+  <tr><td>index.html</td><td>~360</td><td>五个视图的骨架与语义结构</td></tr>
+  <tr><td>styles.css</td><td>~1 500</td><td>极光青主题、布局、动效、打印无关</td></tr>
+  <tr><td>data.js</td><td>~1 000</td><td>知识库、例题与解析、题库、教学映射、召回与本地引擎（UMD）</td></tr>
+  <tr><td>app.js</td><td>~1 490</td><td>视图路由、诊断流程、地图布局、探针、变式题、刷题、教学、持久化</td></tr>
+  <tr><td>plot.js</td><td>~560</td><td>表达式解析、采样、绘制、交互、标注</td></tr>
+  <tr><td>mathfmt.js</td><td>~60</td><td>轻量数学排版</td></tr>
+  <tr><td>server.js</td><td>~330</td><td>静态托管、诊断接口、提示词、校验、缓存</td></tr>
+</table>
+
+<h3>10.2　五个关键取舍</h3>
+
+<h4>① 不引入框架与构建</h4>
+<p>放弃组件复用与类型检查，换来「双击即开」和「断网可演示」。约束推导的结果，不是偏好。</p>
+
+<h4>② 不上 KaTeX</h4>
+<p>内容是「中文 + 行内数学」的纯文本，不是 LaTeX 源码。引入 KaTeX 需要：重写 100 多条字符串、打包约 300KB 字体、并且要保证 <code>file://</code> 下字体能加载。收益是公式排版更精细，成本是三条都关系到演示稳定性。</p>
+<p>最终自研了 60 行 <code>mathfmt.js</code>：把 <code>lim(x→0)</code> 渲染成带回下标的形式、放大积分号、把 <code>a^b</code> 转上标、统一导数撇号。覆盖了本轮需要，风险为零。</p>
+
+<h4>③ 模型只判 4 个必填字段</h4>
+<p>不确定的部分交给模型（读题、判错因、给解析），确定的部分（图谱、坐标、题目、动画）全部锁在本地。这条边界一旦松动，演示就不可控。</p>
+
+<h4>④ 出题用题库而非模型生成</h4>
+<p>16 道题的题干、选项、逐选项错因、分步解析、配图都是人工写好并核对过的。现场不赌模型的生成质量，也不赌它的数学正确性。</p>
+
+<h4>⑤ 初中整层移除</h4>
+<p>早期版本包含初中 6 个节点。移除后节点从 25 降到 19，地图立刻清爽；而「跨层」的故事改由高中↔大学承载，反而更贴合目标用户（大一新生）。产品范围收窄，叙事反而更集中。</p>
+
+<h3>10.3　持久化</h3>
+<p>掌握度与错题本写入 <code>localStorage</code>（键 <code>dongjian.v1</code>），刷新不丢；点「重置」会二次确认后清空。选择本地存储而非后端数据库，是为了保持「纯静态可运行」这个前提。</p>
+
+<h3>10.4　无障碍与降级</h3>
+<ul>
+  <li>地址参数 <code>?fx=0</code> 关闭全部动效（录屏防掉帧、低配机、部分无障碍需求）；</li>
+  <li>地址参数 <code>?mock=1</code> 强制本地引擎，便于离线演示与自动截图；</li>
+  <li>系统开启「减少动态效果」时，CSS 层自动降低动画时长。</li>
+</ul>
+
+<div class="page-break"></div>
+
+<!-- ═══════════ 11 局限与未来 ═══════════ -->
+<h1>11　局限与未来工作</h1>
+
+<h3>11.1　诚实的局限</h3>
+<table>
+  <tr><th style="width:24%">局限</th><th>说明</th></tr>
+  <tr><td><b>自由作答的判错能力有限</b></td><td>选择题与内置例题可以精确判定；自由文本目前只能做到「定位知识点」+ 结构化建议，无法逐行批改手写过程。</td></tr>
+  <tr><td><b>知识覆盖窄</b></td><td>19 个节点只覆盖「函数—导数—极限—积分」这一条主线，高中数学的解析几何、立体几何、概率统计尚未接入。</td></tr>
+  <tr><td><b>解析靠人工</b></td><td>三道示例题与 16 道刷题题的解析是人工撰写并核对的；未配模型时，任意题只能拿到知识点级别的通用步骤。</td></tr>
+  <tr><td><b>单用户</b></td><td>没有账号体系，数据只在本机浏览器；无法做班级视角的学情聚合。</td></tr>
+  <tr><td><b>教学资源是检索入口</b></td><td>未硬编码具体视频，稳妥但少了封面与播放量等元信息。</td></tr>
+</table>
+
+<h3>11.2　下一步</h3>
+<ol class="step">
+  <li><b>过程级判错</b>：把学生的解题过程按行切分，让模型逐行标注「第一处出错的位置」，而不是只给结论。这是最想做的下一步。</li>
+  <li><b>按薄弱度出题</b>：刷题改为按掌握度加权采样，答对涨掌握度、答错降，让刷题与地图真正同源。</li>
+  <li><b>递归前置链</b>：目前探针只能向下探一层；扩展后可以从「洛必达」一路探到「函数性质」。</li>
+  <li><b>班级视角</b>：把多个学生的断点聚合，教师端看到「全班卡在配方法」的热力图。</li>
+  <li><b>具体视频映射</b>：在能核实 BV 号的前提下，把检索入口升级为带封面与播放量的具体视频卡。</li>
+</ol>
+
+<h3>11.3　结论</h3>
+<p>本作品在 8 小时 / 3 人的约束下，选择了一条<b>窄而深</b>的路径：不做全科覆盖，只把「跨学段定位」这一件事做到可视、可解释、可演示。它的价值不在于技术栈的复杂度，而在于把一个被普遍忽视的学习问题 —— <i>「错题记录的是错误，而不是不会」</i> —— 变成了一个能看见、能操作、能验证的界面。</p>
+
+<div class="page-break"></div>
+
+<!-- ═══════════ 附录 ═══════════ -->
+<h1>附录</h1>
+
+<h2>A　接口契约</h2>
+<pre>
+GET  /api/health
+  → { ok, model, hasKey, cache, nodes }
+
+POST /api/diagnose
+  body: { text: string, candidates?: string[] }
+  → { ok, source: 'cache'|'model'|'fallback', candidates: string[], data: Diagnosis }
+
+Diagnosis = {
+  nodeId:     string,      // 必须属于候选集
+  errorType:  string,      // 必须属于该学段枚举
+  confidence: number,      // 0–1
+  diagnosis:  string,      // 4–160 字
+  answer?:    string,      // ≤120 字
+  steps?:     string[],    // 2–6 条，每条 ≤120 字
+  pitfall?:   string       // ≤120 字
+}
+</pre>
+
+<h2>B　运行与部署</h2>
+<pre>
+# 方式 A —— 双击 index.html（零依赖，徽标显示「离线演示」）
+
+# 方式 B —— 起服务
+node server.js                       # → http://127.0.0.1:5173
+$env:PORT="5174"; node server.js     # 端口被占用时
+
+# 可选 —— 接任意 OpenAI 兼容网关
+$env:LLM_API_KEY="sk-..."
+$env:LLM_MODEL="gpt-4o-mini"
+$env:LLM_BASE_URL="https://api.openai.com/v1"
+node server.js
+
+# 验收
+node -e "fetch('http://127.0.0.1:5173/api/health').then(r=>r.json()).then(console.log)"
+# → { ok: true, model: null, hasKey: false, cache: 3, nodes: 19 }
+</pre>
+
+<h2>C　演示参数</h2>
+<table>
+  <tr><th style="width:24%">参数</th><th>停在</th></tr>
+  <tr><td><code>?demo=1</code></td><td>诊断结果（判定 + 图像 + 解析）</td></tr>
+  <tr><td><code>?demo=2</code></td><td>在地图中定位，节点裂开</td></tr>
+  <tr><td><code>?demo=5</code></td><td>前置探针答错，跨层两个断点</td></tr>
+  <tr><td><code>?demo=9</code></td><td>诊断 → 定位 → 愈合 → 错题本</td></tr>
+  <tr><td><code>?demo=10 / 11</code></td><td>刷题页 / 教学页</td></tr>
+  <tr><td><code>?demo=14 / 15</code></td><td>变式题答错给解析 / 点视频跳教学页</td></tr>
+  <tr><td><code>?demo=20</code></td><td>任意题（非内置例题）的结构化结果</td></tr>
+  <tr><td><code>&amp;fx=0</code></td><td>关闭全部动效（录屏 / 低配机）</td></tr>
+  <tr><td><code>?mock=1</code></td><td>强制本地兜底</td></tr>
+</table>
+
+<h2>D　目录结构</h2>
+<pre>
+insight-map/
+├─ index.html      五个视图的骨架
+├─ styles.css      极光青主题
+├─ data.js         知识库（UMD，浏览器与服务端共用）
+├─ app.js          路由 / 流程 / 布局 / 持久化
+├─ plot.js         函数图像引擎
+├─ mathfmt.js      轻量数学排版
+├─ server.js       零依赖后端
+├─ cache.json      预生成的诊断缓存
+├─ docs/           口播稿与截图
+├─ .gitignore
+└─ LICENSE (MIT)
+</pre>
+
+</body>
+</html>
+
